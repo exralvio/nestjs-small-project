@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Departement } from './departemen.entity';
+import { Department } from './department.entity';
 
 @Entity('employees')
 export class Employee {
@@ -18,9 +18,9 @@ export class Employee {
   @Column({ type: 'varchar', length: 150 })
   lastName: string;
 
-  @ManyToOne(() => Departement, (departement) => departement.id, {
+  @ManyToOne(() => Department, (department) => department.id, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'departement_id' })
-  departement: Departement;
+  @JoinColumn({ name: 'department_id' })
+  department: Department;
 }

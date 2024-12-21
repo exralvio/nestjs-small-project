@@ -23,9 +23,16 @@ export class ImportService {
       const { employees, rates, departments } =
         await this.parseTextData(fileContent);
 
-      this.processRate(rates);
-      this.processDepartment(departments);
-      this.processEmployee(employees);
+      try {
+        await this.dataSource.transaction(async (manager) => {
+        //   await this.processRate(rates, manager);
+          await this.processDepartment(departments, manager);
+          await this.processEmployee(employees, manager);
+        });
+      } catch (error) {
+        this.logger.error('Error saving to db', error.stack);
+        throw new Error('Failed saving to db');
+      }
     } catch (error) {
       this.logger.error('Error importing dump', error.stack);
       throw new Error('Error importing dump');
@@ -104,7 +111,7 @@ export class ImportService {
     };
   }
 
-  private async processRate(rates: Array<any>): Promise<any> {
+  private async processRate(rates: Array<any>, manager: any): Promise<any> {
     const currencies = {};
     const currencyRates = [];
 
@@ -122,22 +129,21 @@ export class ImportService {
       });
     }
 
-    try {
-      await this.dataSource.transaction(async (manager) => {
-        await manager.save(Currency, Object.values(currencies));
-        await manager.save(CurrencyRate, currencyRates);
-      });
-    } catch (error) {
-      this.logger.error('Error bulk insert currency', error.stack);
-      throw new Error('Failed to bulk insert currency');
-    }
+    await manager.save(Currency, Object.values(currencies));
+    await manager.save(CurrencyRate, currencyRates);
   }
 
-  private processDepartment(departements: Array<any>): any {
-    // console.log('---employees', employees);
+  private async processDepartment(
+    departments: Array<any>,
+    manager: any,
+  ): Promise<any> {
+    console.log('---departments', departments);
   }
 
-  private processEmployee(employees: Array<any>): any {
+  private async processEmployee(
+    employees: Array<any>,
+    manager: any,
+  ): Promise<any> {
     // console.log('---employees', employees);
   }
 }

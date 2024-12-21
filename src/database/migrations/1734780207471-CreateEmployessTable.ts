@@ -29,7 +29,7 @@ export class CreateEmployessTable1734780207471 implements MigrationInterface {
             length: '150',
           },
           {
-            name: 'departement_id',
+            name: 'department_id',
             type: 'int',
           },
         ],
@@ -39,9 +39,9 @@ export class CreateEmployessTable1734780207471 implements MigrationInterface {
     await queryRunner.createForeignKey(
       'employees',
       new TableForeignKey({
-        columnNames: ['departement_id'],
+        columnNames: ['department_id'],
         referencedColumnNames: ['id'],
-        referencedTableName: 'departements',
+        referencedTableName: 'departments',
         onDelete: 'CASCADE',
       }),
     );
@@ -50,7 +50,7 @@ export class CreateEmployessTable1734780207471 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('employees');
     const foreignKey = table.foreignKeys.find(
-      (fk) => fk.columnNames.indexOf('departement_id') !== -1,
+      (fk) => fk.columnNames.indexOf('department_id') !== -1,
     );
     await queryRunner.dropForeignKey('employees', foreignKey);
 
