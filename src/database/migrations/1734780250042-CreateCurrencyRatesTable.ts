@@ -9,7 +9,6 @@ export class CreateCurrencyRatesTable1734780250042
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Create 'currency_rates' table
     await queryRunner.createTable(
       new Table({
         name: 'currency_rates',
