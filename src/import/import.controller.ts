@@ -18,8 +18,7 @@ export class ImportController {
       throw new Error('File is missing or failed to upload');
     }
 
-    // Now file.buffer contains the file content as a Buffer
-    const fileContent = file.buffer.toString('utf-8'); // Convert the buffer to a string
+    const fileContent = file.buffer.toString('utf-8');
     await this.importService.importDump(fileContent);
     return { message: 'File imported successfully' };
   }

@@ -8,17 +8,24 @@ import {
   getRateValue,
   getStatementValue,
 } from './import.utils';
+import { DataSource } from 'typeorm';
+import { Currency } from 'src/database/entities/currency.entity';
+import { CurrencyRate } from 'src/database/entities/currency-rate.entity';
 
 @Injectable()
 export class ImportService {
+  constructor(private readonly dataSource: DataSource) {}
+
   private readonly logger = new Logger(ImportService.name);
 
   async importDump(fileContent: string): Promise<void> {
     try {
-      const { employees, rates } = await this.parseTextData(fileContent);
+      const { employees, rates, departments } =
+        await this.parseTextData(fileContent);
 
-      this.logger.log('Parsed Employees:', JSON.stringify(employees, null, 2));
-      this.logger.log('Parsed Rates:', JSON.stringify(rates, null, 2));
+      this.processRate(rates);
+      this.processDepartment(departments);
+      this.processEmployee(employees);
     } catch (error) {
       this.logger.error('Error importing dump', error.stack);
       throw new Error('Error importing dump');
@@ -33,6 +40,7 @@ export class ImportService {
     let employeeId = null;
 
     const entities = {};
+    const departments = {};
 
     while (lineIndex < lines.length) {
       let line = lines[lineIndex];
@@ -54,16 +62,12 @@ export class ImportService {
       ) {
         if (line == IMPORT_FIELD.EMPLOYEE) {
           const employee = getEmployeeValue(lines, lineIndex);
-          entities[parent][employee.id] = employee;
+          entities[parent][employee.external_id] = employee;
 
-          employeeId = employee.id;
-
-          lineIndex += Object.entries(employee).length;
+          employeeId = employee.external_id;
         } else if (line == IMPORT_FIELD.RATE) {
           const rate = getRateValue(lines, lineIndex);
           entities[parent].push(rate);
-
-          lineIndex += Object.entries(rate).length;
         }
       } else if (
         spaceLength == IMPORT_LEVEL.TWO &&
@@ -73,12 +77,12 @@ export class ImportService {
           const department = getDepartmentValue(lines, lineIndex);
           entities[parent][employeeId]['department'] = department;
 
-          lineIndex += Object.entries(department).length;
+          if (!departments[department.external_id]) {
+            departments[department.external_id] = department;
+          }
         } else if (line == IMPORT_FIELD.DONATION) {
           const donation = getDonationValue(lines, lineIndex);
           entities[parent][employeeId]['donations'].push(donation);
-
-          lineIndex += Object.entries(donation).length;
         }
       } else if (
         spaceLength == IMPORT_LEVEL.THREE &&
@@ -87,8 +91,6 @@ export class ImportService {
         if (line == IMPORT_FIELD.STATEMENT) {
           const statement = getStatementValue(lines, lineIndex);
           entities[parent][employeeId]['statements'].push(statement);
-
-          lineIndex += Object.entries(statement).length;
         }
       }
 
@@ -98,6 +100,44 @@ export class ImportService {
     return {
       employees: Object.values(entities['employees']),
       rates: entities['rates'],
+      departments,
     };
+  }
+
+  private async processRate(rates: Array<any>): Promise<any> {
+    const currencies = {};
+    const currencyRates = [];
+
+    let id = 1;
+    for (const rate of rates) {
+      if (!currencies[rate.sign]) {
+        currencies[rate.sign] = { id, sign: rate.sign };
+        id++;
+      }
+
+      currencyRates.push({
+        value: rate.value,
+        date: rate.date,
+        currency: { id: currencies[rate.sign].id },
+      });
+    }
+
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        await manager.save(Currency, Object.values(currencies));
+        await manager.save(CurrencyRate, currencyRates);
+      });
+    } catch (error) {
+      this.logger.error('Error bulk insert currency', error.stack);
+      throw new Error('Failed to bulk insert currency');
+    }
+  }
+
+  private processDepartment(departements: Array<any>): any {
+    // console.log('---employees', employees);
+  }
+
+  private processEmployee(employees: Array<any>): any {
+    // console.log('---employees', employees);
   }
 }
