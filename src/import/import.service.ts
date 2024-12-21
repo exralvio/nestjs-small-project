@@ -12,6 +12,8 @@ import { DataSource } from 'typeorm';
 import { Currency } from 'src/database/entities/currency.entity';
 import { CurrencyRate } from 'src/database/entities/currency-rate.entity';
 import { Department } from 'src/database/entities/department.entity';
+import { Employee } from 'src/database/entities/employee.entity';
+import { Statement } from 'src/database/entities/statement.entity';
 
 @Injectable()
 export class ImportService {
@@ -26,9 +28,12 @@ export class ImportService {
 
       try {
         await this.dataSource.transaction(async (manager) => {
-          await this.processRate(rates, manager);
-          await this.processDepartment(departments, manager);
-          await this.processEmployee(employees, manager);
+          await this.processRate(manager, rates);
+          const savedDepartments = await this.processDepartment(
+            manager,
+            departments,
+          );
+          await this.processEmployee(manager, employees, savedDepartments);
         });
       } catch (error) {
         this.logger.error('Error saving to db', error.stack);
@@ -112,7 +117,7 @@ export class ImportService {
     };
   }
 
-  private async processRate(rates: Array<any>, manager: any): Promise<any> {
+  private async processRate(manager: any, rates: Array<any>): Promise<any> {
     const currencies = {};
     const currencyRates = [];
 
@@ -135,16 +140,58 @@ export class ImportService {
   }
 
   private async processDepartment(
-    departments: Array<any>,
     manager: any,
+    departments: Array<any>,
   ): Promise<any> {
-    await manager.save(Department, Object.values(departments));
+    const savedDepartments = await manager.save(
+      Department,
+      Object.values(departments),
+    );
+
+    const results = new Map(
+      savedDepartments.map((item: any) => [item.external_id, item]),
+    );
+
+    return results;
   }
 
   private async processEmployee(
-    employees: Array<any>,
     manager: any,
+    employees: Array<any>,
+    savedDepartments: Map<string, any>,
   ): Promise<any> {
-    // console.log('---employees', employees);
+    const statements = {};
+    const employee_data = employees.map((item) => {
+      statements[item.external_id] = item.statements;
+
+      return {
+        firstName: item.name,
+        lastName: item.surname,
+        external_id: item.external_id,
+        department: {
+          id: savedDepartments.get(item.department.external_id)?.id ?? null,
+        },
+      };
+    });
+
+    const savedEmployee = await manager.save(Employee, employee_data);
+
+    const employeeIds = new Map(
+      savedEmployee.map((item: any) => [item.external_id, item.id]),
+    );
+
+    const statement_data = [];
+    for (const employee of employees) {
+      const current_statement = statements[employee.external_id];
+
+      for (const statement of current_statement) {
+        statement_data.push({
+          ...statement,
+          employee: { id: employeeIds.get(employee.external_id) },
+        });
+      }
+    }
+
+    await manager.save(Statement, statement_data);
   }
 }

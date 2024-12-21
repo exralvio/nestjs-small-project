@@ -8,6 +8,7 @@ export class AddFieldExternalId1734819006303 implements MigrationInterface {
         name: 'external_id',
         type: 'varchar',
         length: '50',
+        isUnique: true,
       }),
     );
 
@@ -17,6 +18,7 @@ export class AddFieldExternalId1734819006303 implements MigrationInterface {
         name: 'external_id',
         type: 'varchar',
         length: '50',
+        isUnique: true,
       }),
     );
 
@@ -26,6 +28,7 @@ export class AddFieldExternalId1734819006303 implements MigrationInterface {
         name: 'external_id',
         type: 'varchar',
         length: '50',
+        isUnique: true,
       }),
     );
   }
