@@ -6,8 +6,8 @@ export class AddFieldExternalId1734819006303 implements MigrationInterface {
       'departments',
       new TableColumn({
         name: 'external_id',
-        type: 'int',
-        isNullable: true,
+        type: 'varchar',
+        length: '50',
       }),
     );
 
@@ -15,8 +15,8 @@ export class AddFieldExternalId1734819006303 implements MigrationInterface {
       'employees',
       new TableColumn({
         name: 'external_id',
-        type: 'int',
-        isNullable: true,
+        type: 'varchar',
+        length: '50',
       }),
     );
 
@@ -24,8 +24,8 @@ export class AddFieldExternalId1734819006303 implements MigrationInterface {
       'statements',
       new TableColumn({
         name: 'external_id',
-        type: 'int',
-        isNullable: true,
+        type: 'varchar',
+        length: '50',
       }),
     );
   }

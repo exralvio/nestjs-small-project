@@ -11,6 +11,7 @@ import {
 import { DataSource } from 'typeorm';
 import { Currency } from 'src/database/entities/currency.entity';
 import { CurrencyRate } from 'src/database/entities/currency-rate.entity';
+import { Department } from 'src/database/entities/department.entity';
 
 @Injectable()
 export class ImportService {
@@ -25,7 +26,7 @@ export class ImportService {
 
       try {
         await this.dataSource.transaction(async (manager) => {
-        //   await this.processRate(rates, manager);
+          await this.processRate(rates, manager);
           await this.processDepartment(departments, manager);
           await this.processEmployee(employees, manager);
         });
@@ -137,7 +138,7 @@ export class ImportService {
     departments: Array<any>,
     manager: any,
   ): Promise<any> {
-    console.log('---departments', departments);
+    await manager.save(Department, Object.values(departments));
   }
 
   private async processEmployee(

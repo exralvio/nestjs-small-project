@@ -23,4 +23,7 @@ export class Employee {
   })
   @JoinColumn({ name: 'department_id' })
   department: Department;
+
+  @Column({ type: 'varchar', length: 50 })
+  external_id: number;
 }

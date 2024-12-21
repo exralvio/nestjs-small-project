@@ -7,4 +7,7 @@ export class Department {
 
   @Column({ type: 'varchar', length: 150 })
   name: string;
+
+  @Column({ type: 'varchar', length: 50 })
+  external_id: number;
 }

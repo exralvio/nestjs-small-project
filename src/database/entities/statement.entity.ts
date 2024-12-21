@@ -21,4 +21,7 @@ export class Statement {
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: number;
+
+  @Column({ type: 'varchar', length: 50 })
+  external_id: number;
 }
