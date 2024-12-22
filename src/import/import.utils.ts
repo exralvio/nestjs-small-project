@@ -1,10 +1,7 @@
 import { getSplitString, stringToDate, stringToFloat } from 'src/common/utils';
 
 export function getLeadingSpaceLength(inputString: string): number {
-  // Match leading spaces at the start of the string
   const match = inputString.match(/^\s*/);
-
-  // Return the length of the matched leading spaces
   return match ? match[0].length : 0;
 }
 
@@ -52,4 +49,14 @@ export function getRateValue(lines: Array<any>, lineIndex: number): any {
     sign: getSplitString(lines[lineIndex + 2], ':', 1),
     value: stringToFloat(getSplitString(lines[lineIndex + 3], ':', 1)),
   };
+}
+
+export function calculateDonationAmount(
+  currencies: Map<string, any>,
+  amount: number,
+  currency: string,
+): number {
+  const value = currencies.get(currency)?.value ?? 1;
+  const result = amount * value;
+  return result;
 }

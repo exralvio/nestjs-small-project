@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IMPORT_FIELD, IMPORT_LEVEL, IMPORT_OBJ } from './import.constants';
 import {
+  calculateDonationAmount,
   getDepartmentValue,
   getDonationValue,
   getEmployeeValue,
@@ -29,16 +30,26 @@ export class ImportService {
 
       try {
         await this.dataSource.transaction(async (manager) => {
+          // Save rates
           await this.processRate(manager, rates);
+
+          // Save department
           const savedDepartments = await this.processDepartment(
             manager,
             departments,
           );
-          await this.processEmployee(manager, employees, savedDepartments);
-        });
 
-        const currencies = await this.getLatestCurrencyRates();
-        const getCurrency = await this.getCurrency();
+          // Retrieve currencies
+          const currencies = await this.getLatestCurrencyRates();
+
+          // Save employee
+          await this.processEmployee(
+            manager,
+            employees,
+            savedDepartments,
+            currencies,
+          );
+        });
       } catch (error) {
         this.logger.error('Error saving to db', error.stack);
         throw new Error('Failed saving to db');
@@ -163,6 +174,7 @@ export class ImportService {
     manager: any,
     employees: Array<any>,
     savedDepartments: Map<string, any>,
+    currencies: Map<string, any>,
   ): Promise<any> {
     const statements = {};
     const donations = {};
@@ -204,8 +216,13 @@ export class ImportService {
 
       for (const donation of current_donation) {
         donation_data.push({
-          ...donation,
           employee: { id: employeeIds.get(employee.external_id) },
+          date: donation.date,
+          amount: calculateDonationAmount(
+            currencies,
+            donation.amount,
+            donation.currency,
+          ),
         });
       }
     }
@@ -233,17 +250,27 @@ export class ImportService {
         return `currency_rate.date = ${subQuery}`;
       });
 
-    const result = await queryBuilder.getRawMany();
+    const queryResults = await queryBuilder.getRawMany();
+    const queryMap = new Map(queryResults.map((row) => [row.currency_id, row]));
 
-    return result.map((row) => ({
-      currency_id: Number(row.currency_id),
-      value: Number(row.value),
-    }));
+    const currencies = await this.getCurrency();
+    const currencyMap = new Map(
+      currencies.map((row) => {
+        return [
+          row.sign,
+          {
+            id: row.id,
+            sign: row.sign,
+            value: queryMap.get(row.id)?.value ?? 0,
+          },
+        ];
+      }),
+    );
+
+    return currencyMap;
   }
 
-  private async getCurrency(): Promise<any> {
-    const currencies = await this.dataSource.getRepository(Currency).find();
-    const results = new Map(currencies.map((item) => [item.sign, item]));
-    return results;
+  private async getCurrency(): Promise<Array<Currency>> {
+    return await this.dataSource.getRepository(Currency).find();
   }
 }
