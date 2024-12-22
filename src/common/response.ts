@@ -20,7 +20,7 @@ export class ResponseInterceptor implements NestInterceptor {
         status: 'success',
         statusCode,
         message: data?.message || 'Operation successful',
-        results: data?.results || data || null,
+        ...(data?.results && { results: data?.results || null }),
       })),
       catchError(() => {
         return next.handle();
