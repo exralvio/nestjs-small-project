@@ -4,8 +4,9 @@ import {
   ExecutionContext,
   CallHandler,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 
 @Injectable()
@@ -22,8 +23,22 @@ export class ResponseInterceptor implements NestInterceptor {
         message: data?.message || 'Operation successful',
         ...(data?.results && { results: data?.results || null }),
       })),
-      catchError(() => {
-        return next.handle();
+      catchError((error) => {
+        if (error instanceof BadRequestException) {
+          response.status(HttpStatus.BAD_REQUEST).json({
+            status: 'error',
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: error.message,
+          });
+        } else {
+          response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            status: 'error',
+            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: error.message || 'Internal Server Error',
+          });
+        }
+
+        return throwError(() => error);
       }),
     );
   }
