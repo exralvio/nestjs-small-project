@@ -34,20 +34,20 @@ export class ImportService {
           await this.processRate(manager, rates);
 
           // Save department
-          const savedDepartments = await this.processDepartment(
+          const departmentMap = await this.processDepartment(
             manager,
             departments,
           );
 
           // Retrieve currencies
-          const currencies = await this.getLatestCurrencyRates();
+          const currencyMap = await this.getLatestCurrencyRates();
 
           // Save employee
           await this.processEmployee(
             manager,
             employees,
-            savedDepartments,
-            currencies,
+            departmentMap,
+            currencyMap,
           );
         });
       } catch (error) {
@@ -173,8 +173,8 @@ export class ImportService {
   private async processEmployee(
     manager: any,
     employees: Array<any>,
-    savedDepartments: Map<string, any>,
-    currencies: Map<string, any>,
+    departmentMap: Map<string, any>,
+    currencyMap: Map<string, any>,
   ): Promise<any> {
     const statements = {};
     const donations = {};
@@ -189,7 +189,7 @@ export class ImportService {
         lastName: item.surname,
         external_id: item.external_id,
         department: {
-          id: savedDepartments.get(item.department.external_id)?.id ?? null,
+          id: departmentMap.get(item.department.external_id)?.id ?? null,
         },
       };
     });
@@ -219,7 +219,7 @@ export class ImportService {
           employee: { id: employeeIds.get(employee.external_id) },
           date: donation.date,
           amount: calculateDonationAmount(
-            currencies,
+            currencyMap,
             donation.amount,
             donation.currency,
           ),
@@ -232,6 +232,27 @@ export class ImportService {
   }
 
   private async getLatestCurrencyRates(): Promise<any> {
+    const rates = await this.getRates();
+    const rateMap = new Map(rates.map((row) => [row.currency_id, row]));
+
+    const currencies = await this.getCurrency();
+    const currencyMap = new Map(
+      currencies.map((row) => {
+        return [
+          row.sign,
+          {
+            id: row.id,
+            sign: row.sign,
+            value: rateMap.get(row.id)?.value ?? 0,
+          },
+        ];
+      }),
+    );
+
+    return currencyMap;
+  }
+
+  private async getRates(): Promise<Array<any>> {
     const queryBuilder = this.dataSource
       .getRepository(CurrencyRate)
       .createQueryBuilder('currency_rate')
@@ -251,23 +272,7 @@ export class ImportService {
       });
 
     const queryResults = await queryBuilder.getRawMany();
-    const queryMap = new Map(queryResults.map((row) => [row.currency_id, row]));
-
-    const currencies = await this.getCurrency();
-    const currencyMap = new Map(
-      currencies.map((row) => {
-        return [
-          row.sign,
-          {
-            id: row.id,
-            sign: row.sign,
-            value: queryMap.get(row.id)?.value ?? 0,
-          },
-        ];
-      }),
-    );
-
-    return currencyMap;
+    return queryResults;
   }
 
   private async getCurrency(): Promise<Array<Currency>> {
