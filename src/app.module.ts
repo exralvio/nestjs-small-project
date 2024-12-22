@@ -7,10 +7,17 @@ import { ImportController } from './import/import.controller';
 import { ImportService } from './import/import.service';
 import { RewardController } from './reward/reward.controller';
 import { RewardService } from './reward/reward.service';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ResponseInterceptor } from './common/response';
 
 @Module({
   imports: [TypeOrmModule.forRoot(AppDataSource.options)],
   controllers: [AppController, ImportController, RewardController],
-  providers: [AppService, ImportService, RewardService],
+  providers: [
+    { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
+    AppService,
+    ImportService,
+    RewardService,
+  ],
 })
 export class AppModule {}
