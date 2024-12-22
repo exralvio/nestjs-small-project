@@ -1,0 +1,59 @@
+{
+	"info": {
+		"_postman_id": "976d6748-3393-46a1-9f61-716003bc5ac7",
+		"name": "NEST JS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32691030",
+		"_collection_link": "https://alv-project.postman.co/workspace/SENJA~4f02f976-40f4-4517-81f0-a7cb731df3d9/collection/32691030-976d6748-3393-46a1-9f61-716003bc5ac7?action=share&source=collection_link&creator=32691030"
+	},
+	"item": [
+		{
+			"name": "Upload",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/D:/TEST/dump.txt"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:3000/import/upload",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"import",
+						"upload"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Rewards",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:3000/api/rewards",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"rewards"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
