@@ -76,6 +76,12 @@ export class ImportService {
 
       line = line.trim();
 
+      if (spaceLength != IMPORT_LEVEL.ZERO) {
+        if (!parent) {
+          throw new Error('Parent row E-List or Rates is undefined');
+        }
+      }
+
       if (spaceLength == IMPORT_LEVEL.ZERO && IMPORT_OBJ.ZERO.includes(line)) {
         if (line == IMPORT_FIELD.ELIST) {
           parent = 'employees';
@@ -101,6 +107,10 @@ export class ImportService {
         spaceLength == IMPORT_LEVEL.TWO &&
         IMPORT_OBJ.TWO.includes(line)
       ) {
+        if (!employeeId) {
+          throw new Error('Employee row is undefined');
+        }
+
         if (line == IMPORT_FIELD.DEPARTMENT) {
           const department = getDepartmentValue(lines, lineIndex);
           entities[parent][employeeId]['department'] = department;
