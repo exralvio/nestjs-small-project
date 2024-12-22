@@ -36,6 +36,9 @@ export class ImportService {
           );
           await this.processEmployee(manager, employees, savedDepartments);
         });
+
+        const currencies = await this.getLatestCurrencyRates();
+        const getCurrency = await this.getCurrency();
       } catch (error) {
         this.logger.error('Error saving to db', error.stack);
         throw new Error('Failed saving to db');
@@ -185,7 +188,7 @@ export class ImportService {
       savedEmployee.map((item: any) => [item.external_id, item.id]),
     );
 
-    /** Saving Statements */
+    /** Saving Statements & Donations */
     const statement_data = [];
     const donation_data = [];
     for (const employee of employees) {
@@ -209,5 +212,38 @@ export class ImportService {
 
     await manager.save(Statement, statement_data);
     await manager.save(Donation, donation_data);
+  }
+
+  private async getLatestCurrencyRates(): Promise<any> {
+    const queryBuilder = this.dataSource
+      .getRepository(CurrencyRate)
+      .createQueryBuilder('currency_rate')
+      .select([
+        'currency_rate.currency_id AS currency_id',
+        'currency_rate.value AS value',
+      ])
+      .andWhere((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('MAX(inner_currency_rate.date)')
+          .from(CurrencyRate, 'inner_currency_rate')
+          .where('inner_currency_rate.currency_id = currency_rate.currency_id')
+          .getQuery();
+
+        return `currency_rate.date = ${subQuery}`;
+      });
+
+    const result = await queryBuilder.getRawMany();
+
+    return result.map((row) => ({
+      currency_id: Number(row.currency_id),
+      value: Number(row.value),
+    }));
+  }
+
+  private async getCurrency(): Promise<any> {
+    const currencies = await this.dataSource.getRepository(Currency).find();
+    const results = new Map(currencies.map((item) => [item.sign, item]));
+    return results;
   }
 }
