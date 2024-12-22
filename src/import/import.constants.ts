@@ -3,7 +3,7 @@ export const IMPORT_FIELD = {
   EMPLOYEE: 'Employee',
   ID: 'id',
   NAME: 'name',
-  SURNAME: 'SURNAME',
+  SURNAME: 'surname',
   DEPARTMENT: 'Department',
   SALARY: 'Salary',
   STATEMENT: 'Statement',
