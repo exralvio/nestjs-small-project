@@ -51,12 +51,12 @@ export class ImportService {
           );
         });
       } catch (error) {
-        this.logger.error('Error saving to db', error.stack);
-        throw new Error('Failed saving to db');
+        this.logger.error(`Error saving to db: ${error.message}`, error.stack);
+        throw new Error(`Failed saving to db: ${error.message}`);
       }
     } catch (error) {
-      this.logger.error('Error importing dump', error.stack);
-      throw new Error('Error importing dump');
+      this.logger.error(`Error importing dump: ${error.message}`, error.stack);
+      throw new Error(error.message);
     }
   }
 

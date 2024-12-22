@@ -22,7 +22,7 @@ export class ResponseInterceptor implements NestInterceptor {
         message: data?.message || 'Operation successful',
         results: data?.results || data || null,
       })),
-      catchError((error) => {
+      catchError(() => {
         return next.handle();
       }),
     );
