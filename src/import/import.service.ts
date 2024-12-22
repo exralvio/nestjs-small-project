@@ -14,6 +14,7 @@ import { CurrencyRate } from 'src/database/entities/currency-rate.entity';
 import { Department } from 'src/database/entities/department.entity';
 import { Employee } from 'src/database/entities/employee.entity';
 import { Statement } from 'src/database/entities/statement.entity';
+import { Donation } from 'src/database/entities/donation.entity';
 
 @Injectable()
 export class ImportService {
@@ -161,8 +162,12 @@ export class ImportService {
     savedDepartments: Map<string, any>,
   ): Promise<any> {
     const statements = {};
+    const donations = {};
+
+    /** Saving Employees */
     const employee_data = employees.map((item) => {
       statements[item.external_id] = item.statements;
+      donations[item.external_id] = item.donations;
 
       return {
         firstName: item.name,
@@ -180,9 +185,12 @@ export class ImportService {
       savedEmployee.map((item: any) => [item.external_id, item.id]),
     );
 
+    /** Saving Statements */
     const statement_data = [];
+    const donation_data = [];
     for (const employee of employees) {
       const current_statement = statements[employee.external_id];
+      const current_donation = donations[employee.external_id];
 
       for (const statement of current_statement) {
         statement_data.push({
@@ -190,8 +198,16 @@ export class ImportService {
           employee: { id: employeeIds.get(employee.external_id) },
         });
       }
+
+      for (const donation of current_donation) {
+        donation_data.push({
+          ...donation,
+          employee: { id: employeeIds.get(employee.external_id) },
+        });
+      }
     }
 
     await manager.save(Statement, statement_data);
+    await manager.save(Donation, donation_data);
   }
 }
