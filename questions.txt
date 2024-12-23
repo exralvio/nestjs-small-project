@@ -1,0 +1,86 @@
+1. **File Versioning**
+   How would you modify your implementation to support future versions of the input file with additional fields or changed structure?
+
+Upgrading the version of an input file requires several changes in the codebase to accommodate the new file structure while maintaining backward compatibility. The steps involved are as follows:
+
+a. Update parseTextData Function
+Modify the parseTextData() function in import.service.ts to its updated version, parseTextDataV2().
+
+b. Update Utility Functions
+Update the following functions in import.utils.ts to handle the new file structure. Ensure each function is adjusted as needed:
+
+getEmployeeValue() → getEmployeeValueV2()
+getRateValue() → getRateValueV2()
+getDepartmentValue() → getDepartmentValueV2()
+getDonationValue() → getDonationValueV2()
+getStatementValue() → getStatementValueV2()
+c. Upgrade Controller and Endpoint Versions
+Introduce a V2 version of the controller and its associated endpoints. This ensures backward compatibility with the existing V1 implementation.
+
+d. Deprecate V1 Endpoints
+Once V2 is stable and fully adopted, deprecate and shut down the V1 endpoints to streamline the system and eliminate unused code.
+
+-----------------------------
+
+2. **Asynchronous Exchange Rates**
+   If the exchange rate data is no longer included in the file and needs to be fetched asynchronously from an external API, how would you adapt your system?
+
+a. Create a Dedicated Exchange Rate Module and Service
+Develop a new ExchangeRateModule with an associated ExchangeRateService.
+The service will handle communication with the third-party API to fetch the latest exchange rate data.
+Implement robust error handling and caching mechanisms (e.g., using Redis or in-memory cache) to minimize redundant API calls.
+b. Integrate Exchange Rate Service into Import Workflow
+
+Update the ImportService to include a dependency on ExchangeRateService.
+In the ImportService workflow, invoke ExchangeRateService to fetch the exchange rates 
+asynchronously before processing the import file.
+
+c. Pass Exchange Rate Data to Import Processing
+Once the exchange rate data is retrieved, pass it as part of the input to the import processing pipeline.
+Modify existing processing logic in ImportService to utilize the fetched exchange rate data where necessary.
+
+d. Optimize for Concurrency
+Use Promise.all or other asynchronous utilities to fetch exchange rates and process the import file concurrently, if appropriate.
+Ensure synchronization of data to avoid race conditions during the import process.
+
+-----------------------------
+
+3. **Web Interface**
+   How would you allow users to upload the file via a web interface in the future?
+a. Restrict File Uploads to a Single File
+
+Ensure the file upload functionality supports only one file at a time.
+Use the multipart/form-data method for handling file uploads securely and efficiently.
+
+b. Set Maximum File Size
+Define a maximum file size limit to prevent excessive memory or storage usage.
+Implement server-side validation to reject oversized files and provide clear error messages to users.
+
+c. Configure Appropriate Server Timeout
+Set a reasonable server timeout duration to accommodate larger files while preventing long-running requests from overloading the system.
+
+d. Implement a User-Friendly Loading UI
+Display an advanced loading indicator during the file upload process.
+Include a clear message prompting users not to cancel or navigate away until the upload is complete.
+
+-----------------------------
+
+4. **Scalability**
+   If the file size grows significantly (e.g., contains 1M employees), what optimizations would you implement?
+User Experience Optimizations
+a. Asynchronous Background Processing
+- Transition from direct execution upon upload to a background queueing system to handle large files.
+- Enforce maximum file size limits for uploads to maintain predictable performance.
+- Inform users that they will receive a notification once the processing is complete.
+Upload the file to the server as the first step before initiating any processing.
+
+Backend Optimizations
+b. Efficient File Processing
+- Utilize file streams to process files in chunks rather than loading the entire file into memory, reducing memory consumption.
+- Implement batch processing for database operations, breaking the data into smaller chunks for insertion to prevent overwhelming the database and system resources.
+
+Infrastructure Optimizations
+c. Resource Scaling
+- Scale server resources such as CPU, memory, and disk I/O to accommodate larger files and increased processing demands.
+- Store uploaded files in scalable object storage solutions like AWS S3, GCP Cloud Storage, or Azure Blob Storage. Use pre-signed URLs for secure and efficient file access.
+- Use performance monitoring tools like AWS CloudWatch, Grafana, or Prometheus to track server performance, identify bottlenecks, and scale infrastructure proactively.
